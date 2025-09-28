@@ -1,16 +1,7 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, Dimensions } from 'react-native';
-import { PanGestureHandler, State } from 'react-native-gesture-handler';
-import Animated, {
-  useAnimatedGestureHandler,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  runOnJS,
-} from 'react-native-reanimated';
+import { View, Text, Image, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
-const SWIPE_THRESHOLD = screenWidth * 0.3;
 
 interface User {
   id: string;
@@ -28,86 +19,35 @@ interface SwipeCardProps {
 }
 
 export default function SwipeCard({ user, onSwipeLeft, onSwipeRight, isTop }: SwipeCardProps) {
-  const translateX = useSharedValue(0);
-  const translateY = useSharedValue(0);
-  const scale = useSharedValue(isTop ? 1 : 0.95);
-  const opacity = useSharedValue(isTop ? 1 : 0.8);
-
-  const gestureHandler = useAnimatedGestureHandler({
-    onStart: (_, context: any) => {
-      context.startX = translateX.value;
-      context.startY = translateY.value;
-    },
-    onActive: (event, context) => {
-      translateX.value = context.startX + event.translationX;
-      translateY.value = context.startY + event.translationY;
-      
-      // Add rotation based on horizontal movement
-      const rotation = translateX.value / 10;
-      translateX.value = translateX.value;
-    },
-    onEnd: (event) => {
-      const shouldSwipeLeft = translateX.value < -SWIPE_THRESHOLD;
-      const shouldSwipeRight = translateX.value > SWIPE_THRESHOLD;
-
-      if (shouldSwipeLeft) {
-        translateX.value = withSpring(-screenWidth * 1.5);
-        runOnJS(onSwipeLeft)();
-      } else if (shouldSwipeRight) {
-        translateX.value = withSpring(screenWidth * 1.5);
-        runOnJS(onSwipeRight)();
-      } else {
-        translateX.value = withSpring(0);
-        translateY.value = withSpring(0);
-      }
-    },
-  });
-
-  const animatedStyle = useAnimatedStyle(() => {
-    const rotation = translateX.value / 10;
-    
-    return {
-      transform: [
-        { translateX: translateX.value },
-        { translateY: translateY.value },
-        { rotate: `${rotation}deg` },
-        { scale: scale.value },
-      ],
-      opacity: opacity.value,
-    };
-  });
-
   return (
-    <PanGestureHandler onGestureEvent={gestureHandler} enabled={isTop}>
-      <Animated.View style={[styles.card, animatedStyle]}>
-        <Image
-          source={{ 
-            uri: user.photoURL || 'https://via.placeholder.com/300x400/cccccc/666666?text=No+Photo' 
-          }}
-          style={styles.image}
-          resizeMode="cover"
-        />
-        <View style={styles.overlay}>
-          <View style={styles.infoContainer}>
-            <Text style={styles.name}>
-              {user.displayName || 'Anonymous'}
-              {user.age && `, ${user.age}`}
-            </Text>
-            <Text style={styles.bio} numberOfLines={3}>
-              {user.bio || 'No bio available'}
-            </Text>
-          </View>
+    <View style={[styles.card, { opacity: isTop ? 1 : 0.8, transform: [{ scale: isTop ? 1 : 0.95 }] }]}>
+      <Image
+        source={{ 
+          uri: user.photoURL || 'https://via.placeholder.com/300x400/cccccc/666666?text=No+Photo' 
+        }}
+        style={styles.image}
+        resizeMode="cover"
+      />
+      <View style={styles.overlay}>
+        <View style={styles.infoContainer}>
+          <Text style={styles.name}>
+            {user.displayName || 'Anonymous'}
+            {user.age && `, ${user.age}`}
+          </Text>
+          <Text style={styles.bio} numberOfLines={3}>
+            {user.bio || 'No bio available'}
+          </Text>
         </View>
-        
-        {/* Swipe indicators */}
-        <View style={[styles.swipeIndicator, styles.leftIndicator]}>
-          <Text style={styles.swipeText}>NOPE</Text>
-        </View>
-        <View style={[styles.swipeIndicator, styles.rightIndicator]}>
-          <Text style={styles.swipeText}>LIKE</Text>
-        </View>
-      </Animated.View>
-    </PanGestureHandler>
+      </View>
+      
+      {/* Swipe indicators */}
+      <View style={[styles.swipeIndicator, styles.leftIndicator]}>
+        <Text style={styles.swipeText}>NOPE</Text>
+      </View>
+      <View style={[styles.swipeIndicator, styles.rightIndicator]}>
+        <Text style={styles.swipeText}>LIKE</Text>
+      </View>
+    </View>
   );
 }
 
